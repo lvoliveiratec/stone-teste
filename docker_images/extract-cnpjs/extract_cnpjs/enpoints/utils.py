@@ -73,31 +73,11 @@ class Utils(ABC):
         return session
 
 
-    def extract_zip(self, zip_file, extract_to='./'):
-
+    def extract_zip(self,zip_file, extract_to='./'):
         # Descompactar o arquivo ZIP
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            for file_name in zip_ref.namelist():
-                # Obter o nome do arquivo sem a extensão original
-                base_name, original_ext = os.path.splitext(file_name)
-                
-                # Renomear para evitar conflitos ou extensões inesperadas
-                if original_ext.lower() not in ['.csv', '.txt']:  # Extensões permitidas
-                    # Substituir caracteres indesejados e adicionar extensão correta
-                    new_name = base_name.lower().replace(".", "_") + ".csv"
-                else:
-                    # Mantém o nome original para extensões padrão
-                    new_name = file_name.lower().replace(".", "_")
-
-                # Caminho completo para salvar o arquivo extraído
-                new_file_path = os.path.join(extract_to, new_name)
-
-                # Extrair o arquivo para o novo nome
-                with open(new_file_path, 'wb') as f:
-                    f.write(zip_ref.read(file_name))
-
-                LOGGER.info(f"Arquivo extraído para: {new_file_path}")
-
+            zip_ref.extractall(extract_to)
+        LOGGER.info(f"Arquivos descompactados para: {extract_to}")
         
     def upload_to_s3(self,local_file, bucket_name, s3_key):
         # Subir arquivos para o S3

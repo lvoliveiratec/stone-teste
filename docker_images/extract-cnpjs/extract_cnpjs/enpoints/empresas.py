@@ -24,7 +24,7 @@ class GetEmp(Utils):
         
     def sync(self):
         
-        page=1
+        page=6
         stop=True
         while stop:
             try:
@@ -40,8 +40,8 @@ class GetEmp(Utils):
                     for file in files:
                         local_file_path = os.path.join(root, f"{file}")
                         LOGGER.info(local_file_path)
-                        blob_name=f"{self.s3_directory}{self.tap_stream_id}{page}"
-                        s3_key = os.path.join(blob_name, file)
+                        blob_name=f"{self.s3_directory}"
+                        s3_key = os.path.join(blob_name, f"{self.tap_stream_id}{page}.csv")
                         self.upload_to_s3(local_file_path, self.bucket_name, s3_key)
                 
                         if local_file_path and os.path.exists(local_file_path):
