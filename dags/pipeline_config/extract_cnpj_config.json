@@ -1,0 +1,32 @@
+{
+	"DATABASE_ATHENA":"stn_database",
+	"GLUE_JOB_SILVER_TO_GOLD":"job_silver_to_gold",
+	"OUTPUT_QUERY_S3":"s3://stn-gold/athena-results/",
+	"DOCKER_IMAGE":"885394832474.dkr.ecr.us-east-1.amazonaws.com/stn-images/extract-cnpjs:latest",
+	"DOCKER_RUN":"extract-cnpjs",
+    "TARGET_S3_GOLD":"s3://stn-gold/cnpjs/STARTDATE/",
+	"ENDPOINTS":[
+		{
+			"tap_stream_id":"empresas",
+		    "start_date":"START_ENDPOINT",
+			"bucket_name":"stn-bronze",
+			"s3_directory":"cnpjs/empresas/STARTDATE/",
+            "glue_scrip_location":"s3://stn-glue/scripts/empresas_bronze_to_silver.py",
+            "source_s3_path":"s3://stn-bronze/cnpjs/empresas/STARTDATE/",
+            "target_s3_path":"s3://stn-silver/cnpjs/empresas/STARTDATE/",
+            "GLUE_JOB_BRONZE_TO_SILVER":"empresas_job_bronze_to_silver",
+			"fieldnames":"cnpj,razao_social,natureza_juridica,qualificacao_responsavel,capital_social,cod_porte"
+		},
+		{
+			"tap_stream_id":"socios",
+		    "start_date":"START_ENDPOINT",
+			"bucket_name":"stn-bronze",
+			"s3_directory":"cnpjs/socios/STARTDATE/",
+            "glue_scrip_location":"s3://stn-glue/scripts/socios_bronze_to_silver.py",
+            "source_s3_path":"s3://stn-bronze/cnpjs/socios/STARTDATE/",
+            "target_s3_path":"s3://stn-silver/cnpjs/socios/STARTDATE/",
+            "GLUE_JOB_BRONZE_TO_SILVER":"socios_job_bronze_to_silver",
+			"fieldnames":"cnpj,razao_social,natureza_juridica,qualificacao_responsavel,capital_social,cod_porte"
+		}
+	]
+}
