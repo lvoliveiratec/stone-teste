@@ -2,7 +2,7 @@
 if [ -z "$B64_CONFIG" ]
 then
     # NOT BASE64
-    $TAP_NAME -c $CONF_LOCATION --catalog $SCHEMA_FILE -p $SCHEMA_FILE
+    $TAP_NAME
 else
     # BASE64
     mkdir /tmp/schemas
@@ -12,5 +12,5 @@ else
     echo $B64_CONF_FILE | base64 -d > $CONF_LOCATION
 
     # EXECUTE SINGER TAP
-    $TAP_NAME -c $CONF_LOCATION --catalog $SCHEMA_FILE -p $SCHEMA_FILE
+    $TAP_NAME 
 fi

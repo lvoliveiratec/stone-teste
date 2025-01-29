@@ -4,6 +4,7 @@ import requests
 import json
 import zipfile
 import boto3
+import csv
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from datetime import datetime, timedelta
@@ -14,7 +15,7 @@ LOGGER = singer.get_logger()
 
 from abc import ABC
 
-DEFAULT_CONNECTION_TIMEOUT = 60
+DEFAULT_CONNECTION_TIMEOUT = 240
 
 
 
@@ -78,6 +79,61 @@ class Utils(ABC):
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
             zip_ref.extractall(extract_to)
         LOGGER.info(f"Arquivos descompactados para: {extract_to}")
+        
+    def convert_csv_to_json(self,csv_file_path, json_file_path,fieldnames):
+        
+        # Ler o CSV e converter para um formato de lista de dicionários
+        with open(csv_file_path, mode='r', encoding='ISO-8859-1') as csv_file:
+            reader = csv.DictReader(csv_file,fieldnames=fieldnames, delimiter=';')  # Usando ";" como delimitador
+            data = [row for row in reader]
+            os.remove(csv_file_path)
+            LOGGER.info(f"Arquivo temporário CSV {csv_file_path} excluído com sucesso.")
+        
+        # Salvar como arquivo JSON
+        with open(json_file_path, 'w', encoding='utf-8') as json_file:
+            json.dump(data, json_file, ensure_ascii=False, indent=4)
+        print(f"Arquivo JSON gerado em: {json_file_path}")
+    
+    # def extract_zip(self, zip_file, extract_to='./'):
+    #     if not os.path.exists(zip_file):
+    #         raise FileNotFoundError(f"Arquivo ZIP {zip_file} não encontrado.")
+        
+    #     try:
+    #         LOGGER.info("TOAQUII")
+    #         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+    #             zip_ref.extractall(extract_to)
+    #             extracted_files = zip_ref.namelist()  # Lista dos arquivos extraídos
+            
+    #         LOGGER.info(f"Arquivos descompactados para: {extract_to}")
+
+    #         # Reprocessar arquivos extraídos para UTF-8, se necessário
+    #         for file_name in extracted_files:
+    #             LOGGER.info("CHEGUEI AQUI")
+    #             file_path = os.path.join(extract_to, file_name)
+    #             if file_name.endswith('.csv') or file_name.endswith('.txt'):
+    #                 self._convert_to_utf8(file_path)
+            
+    #         return extracted_files
+    #     except zipfile.BadZipFile:
+    #         LOGGER.error(f"O arquivo {zip_file} está corrompido.")
+    #         raise
+    #     except Exception as e:
+    #         LOGGER.error(f"Erro ao descompactar o arquivo {zip_file}: {str(e)}")
+    #         raise
+
+    # def _convert_to_utf8(self, file_path):
+    #     try:
+    #         LOGGER.info("ENTREI AQUI")
+    #         # Ler o arquivo no encoding original e regravar em UTF-8
+    #         with open(file_path, 'r', encoding='latin1') as file:  # Ajuste 'latin1' para o encoding original, se necessário
+    #             content = file.read()
+    #         with open(file_path, 'w', encoding='utf-8') as file:
+    #             file.write(content)
+    #         LOGGER.info(f"Arquivo {file_path} convertido para UTF-8.")
+    #     except Exception as e:
+    #         LOGGER.error(f"Erro ao converter o arquivo {file_path} para UTF-8: {str(e)}")
+    #         raise
+
         
     def upload_to_s3(self,local_file, bucket_name, s3_key):
         # Subir arquivos para o S3
