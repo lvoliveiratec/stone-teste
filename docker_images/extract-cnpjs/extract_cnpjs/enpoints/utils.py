@@ -1,5 +1,4 @@
 import os
-from typing import List
 import requests
 import json
 import zipfile
@@ -7,58 +6,64 @@ import boto3
 import csv
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from datetime import datetime, timedelta
 from io import BytesIO
 import singer
-LOGGER = singer.get_logger()
-
-
 from abc import ABC
 
+# Define o tempo limite padrão de conexão
 DEFAULT_CONNECTION_TIMEOUT = 240
 
+# Inicializa o logger para registrar informações durante a execução
+LOGGER = singer.get_logger()
 
 
 class Utils(ABC):
     def __init__(self, config) -> None:
+        """
+        Inicializa a classe com a URL base e a configuração do processo.
+        """
         self.base_url = (
             "https://arquivos.receitafederal.gov.br/dados/cnpj/dados_abertos_cnpj/"
         )
         self.config = config
         
-    # Sobe exceção  
     def raise_if_not_200(self, response):
+        """
+        Verifica se o status code da resposta é 200 (OK).
+        Se não for, lança uma exceção.
+        """
         if response.status_code != 200:
-            message = str(response.status_code) + " " + str(response.text)
+            message = f"Erro {response.status_code}: {response.text}"
             raise Exception(message)
         else:
             return BytesIO(response.content)
 
-    # Faz a requisição 
-    def do_request(
-        self, endpoint, session=requests.Session()
-    ) -> requests.Response:
-
+    def do_request(self, endpoint, session=requests.Session()) -> requests.Response:
+        """
+        Realiza uma requisição GET para o endpoint especificado.
+        Utiliza um mecanismo de repetição em caso de falhas.
+        """
         url = self.base_url + endpoint
-        LOGGER.info("URL= " + url)
+        LOGGER.info(f"Realizando requisição para: {url}")
         
+        # Faz a requisição com retries configurados
         raw_resp = self.requests_retry_session(session=session).get(
             url,
             timeout=DEFAULT_CONNECTION_TIMEOUT,
         )
         
+        # Verifica se a resposta foi bem-sucedida
         response = self.raise_if_not_200(raw_resp)
         
         return response
 
-    def requests_retry_session(
-        self,
-        retries=3,
-        backoff_factor=2,
-        status_forcelist=(500, 502, 504),
-        session=None,
-    ):
+    def requests_retry_session(self, retries=3, backoff_factor=2, status_forcelist=(500, 502, 504), session=None):
+        """
+        Configura o mecanismo de repetição para requisições HTTP em caso de falhas temporárias.
+        """
         session = session or requests.Session()
+        
+        # Configura as tentativas e o fator de backoff para re-tentativas
         retry = Retry(
             total=retries,
             read=retries,
@@ -73,76 +78,51 @@ class Utils(ABC):
         session.mount("https://", adapter)
         return session
 
+    def extract_zip(self, zip_file, extract_to='./'):
+        """
+        Descompacta um arquivo ZIP para o diretório especificado.
+        """
+        try:
+            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                zip_ref.extractall(extract_to)
+            LOGGER.info(f"Arquivos descompactados para: {extract_to}")
+        except Exception as e:
+            LOGGER.error(f"Erro ao descompactar o arquivo {zip_file}: {str(e)}")
+            raise
 
-    def extract_zip(self,zip_file, extract_to='./'):
-        # Descompactar o arquivo ZIP
-        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            zip_ref.extractall(extract_to)
-        LOGGER.info(f"Arquivos descompactados para: {extract_to}")
-        
-    def convert_csv_to_json(self,csv_file_path, json_file_path,fieldnames):
-        
-        # Ler o CSV e converter para um formato de lista de dicionários
-        with open(csv_file_path, mode='r', encoding='ISO-8859-1') as csv_file:
-            reader = csv.DictReader(csv_file,fieldnames=fieldnames, delimiter=';')  # Usando ";" como delimitador
-            data = [row for row in reader]
+    def convert_csv_to_json(self, csv_file_path, json_file_path, fieldnames):
+        """
+        Converte um arquivo CSV para JSON, usando uma lista de fieldnames.
+        Remove o arquivo CSV após a conversão e gera o arquivo JSON.
+        """
+        try:
+            # Lê o CSV e converte para uma lista de dicionários
+            with open(csv_file_path, mode='r', encoding='ISO-8859-1') as csv_file:
+                reader = csv.DictReader(csv_file, fieldnames=fieldnames, delimiter=';')  # Usando ";" como delimitador
+                data = [row for row in reader]
+            
+            # Remove o arquivo CSV após a conversão
             os.remove(csv_file_path)
             LOGGER.info(f"Arquivo temporário CSV {csv_file_path} excluído com sucesso.")
         
-        # Salvar como arquivo JSON
-        with open(json_file_path, 'w', encoding='utf-8') as json_file:
-            json.dump(data, json_file, ensure_ascii=False, indent=4)
-        print(f"Arquivo JSON gerado em: {json_file_path}")
-    
-    # def extract_zip(self, zip_file, extract_to='./'):
-    #     if not os.path.exists(zip_file):
-    #         raise FileNotFoundError(f"Arquivo ZIP {zip_file} não encontrado.")
+            # Salva os dados como arquivo JSON
+            with open(json_file_path, 'w', encoding='utf-8') as json_file:
+                json.dump(data, json_file, ensure_ascii=False, indent=4)
+            LOGGER.info(f"Arquivo JSON gerado em: {json_file_path}")
         
-    #     try:
-    #         LOGGER.info("TOAQUII")
-    #         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-    #             zip_ref.extractall(extract_to)
-    #             extracted_files = zip_ref.namelist()  # Lista dos arquivos extraídos
-            
-    #         LOGGER.info(f"Arquivos descompactados para: {extract_to}")
+        except Exception as e:
+            LOGGER.error(f"Erro ao converter CSV para JSON: {str(e)}")
+            raise
 
-    #         # Reprocessar arquivos extraídos para UTF-8, se necessário
-    #         for file_name in extracted_files:
-    #             LOGGER.info("CHEGUEI AQUI")
-    #             file_path = os.path.join(extract_to, file_name)
-    #             if file_name.endswith('.csv') or file_name.endswith('.txt'):
-    #                 self._convert_to_utf8(file_path)
-            
-    #         return extracted_files
-    #     except zipfile.BadZipFile:
-    #         LOGGER.error(f"O arquivo {zip_file} está corrompido.")
-    #         raise
-    #     except Exception as e:
-    #         LOGGER.error(f"Erro ao descompactar o arquivo {zip_file}: {str(e)}")
-    #         raise
-
-    # def _convert_to_utf8(self, file_path):
-    #     try:
-    #         LOGGER.info("ENTREI AQUI")
-    #         # Ler o arquivo no encoding original e regravar em UTF-8
-    #         with open(file_path, 'r', encoding='latin1') as file:  # Ajuste 'latin1' para o encoding original, se necessário
-    #             content = file.read()
-    #         with open(file_path, 'w', encoding='utf-8') as file:
-    #             file.write(content)
-    #         LOGGER.info(f"Arquivo {file_path} convertido para UTF-8.")
-    #     except Exception as e:
-    #         LOGGER.error(f"Erro ao converter o arquivo {file_path} para UTF-8: {str(e)}")
-    #         raise
-
-        
-    def upload_to_s3(self,local_file, bucket_name, s3_key):
-        # Subir arquivos para o S3
-        s3_client = boto3.client('s3')
+    def upload_to_s3(self, local_file, bucket_name, s3_key):
+        """
+        Envia um arquivo local para um bucket S3.
+        """
         try:
+            s3_client = boto3.client('s3')
             s3_client.upload_file(local_file, bucket_name, s3_key)
             LOGGER.info(f"Arquivo {local_file} enviado para o S3 com sucesso!")
+        
         except Exception as e:
-            LOGGER.info(f"Erro ao enviar para o S3: {str(e)}")
-            raise Exception(f"Erro ao enviar para o S3: {str(e)}")
-
-            
+            LOGGER.error(f"Erro ao enviar arquivo {local_file} para o S3: {str(e)}")
+            raise
