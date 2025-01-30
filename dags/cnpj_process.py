@@ -3,7 +3,7 @@ from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.operators.athena import AthenaOperator
 from airflow.utils.task_group import TaskGroup
-from airflow.utils.dates import days_ago
+from datetime import datetime
 import json
 import boto3
 
@@ -34,7 +34,7 @@ SOURCES_S3_GOLD = {}
 dag = DAG(
     "cnpjs_etl",
     schedule_interval="0 6 1 * *",  # Executa todo dia às 6h
-    start_date=days_ago(30),
+    start_date=datetime(2025, 1, 1),
     catchup=True
 )
 
