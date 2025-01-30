@@ -32,7 +32,7 @@ SOURCES_S3_GOLD = {}
 
 # Definição da DAG
 dag = DAG(
-    "s3_glue_athena_pipeline",
+    "cnpjs_etl",
     schedule_interval="0 6 1 * *",  # Executa todo dia às 6h
     start_date=days_ago(1),
     catchup=False
@@ -117,7 +117,7 @@ create_athena_views = AthenaOperator(
     task_id=f"create_athena_views",
     query=f"""
         CREATE EXTERNAL TABLE IF NOT EXISTS {DATABASE_ATHENA}.cnpjs (
-            npj STRING,
+            cnpj STRING,
             qtde_socios INTEGER,
             flag_socio_estrangeiro BOOLEAN,
             doc_alvo BOOLEAN
