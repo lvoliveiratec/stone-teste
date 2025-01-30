@@ -18,13 +18,13 @@ with open(file_path, "r", encoding="utf-8") as file:
     config = json.load(file)
 
 # Variáveis de configuração
-GLUE_JOB_SILVER_TO_GOLD = config.get("GLUE_JOB_SILVER_TO_GOLD")  # job_silver_to_gold
-DATABASE_ATHENA = config.get("DATABASE_ATHENA")  # meu_database
-OUTPUT_QUERY_S3 = config.get("OUTPUT_QUERY_S3")  # f"s3://{BUCKET_NAME}/athena-results/"
+GLUE_JOB_SILVER_TO_GOLD = config.get("GLUE_JOB_SILVER_TO_GOLD") 
+DATABASE_ATHENA = config.get("DATABASE_ATHENA")  
+OUTPUT_QUERY_S3 = config.get("OUTPUT_QUERY_S3")  
 DOCKER_IMAGE = config.get("DOCKER_IMAGE")
 DOCKER_RUN = config.get("DOCKER_RUN")
 ENDPOINTS = config.get("ENDPOINTS")
-START_DATE = "{{ ds }}"  # Correto
+START_DATE = "{{ ds }}" 
 START_ENDPOINT = "{{ macros.ds_format(ds, '%Y-%m-%d', '%Y-%m') }}"
 TARGET_S3_GOLD = config.get("TARGET_S3_GOLD")
 TARGET_S3_GOLD = TARGET_S3_GOLD.replace("STARTDATE", START_DATE)
@@ -33,7 +33,7 @@ SOURCES_S3_GOLD = {}
 # Definição da DAG
 dag = DAG(
     "cnpjs_etl",
-    schedule_interval="0 6 1 * *",  # Executa todo dia às 6h
+    schedule_interval="0 6 1 * *",  
     start_date=datetime(2025, 1, 1),
     catchup=True
 )
