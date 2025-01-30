@@ -34,8 +34,8 @@ SOURCES_S3_GOLD = {}
 dag = DAG(
     "cnpjs_etl",
     schedule_interval="0 6 1 * *",  # Executa todo dia às 6h
-    start_date=days_ago(1),
-    catchup=False
+    start_date=days_ago(30),
+    catchup=True
 )
 
 # Inicializando lista de tasks
