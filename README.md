@@ -23,7 +23,7 @@ Este repositório contém a implementação de um processo de integração de da
 ## Como Rodar
 
 Estou disponibilizando o teste via airflow para demonstrar todo o fluxo.
-Me avisem para que eu possa subir o ambiente, e acessem através do link > http://3.224.116.53:8080/home
+A acessem através do link > http://3.224.116.53:8080/home
 **user:admin**
 **senha:admin**
 
